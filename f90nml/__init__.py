@@ -5,8 +5,10 @@
 """
 from f90nml.namelist import Namelist
 from f90nml.parser import Parser
+from f90nml.diff import NamelistDiff
 
-__version__ = '1.4.3'
+
+__version__ = '1.5.0-dev'
 
 
 def read(nml_path):
@@ -100,3 +102,32 @@ def patch(nml_path, nml_patch, out_path=None):
     parser = Parser()
 
     return parser.read(nml_path, nml_patch, out_path)
+
+
+def diff(*nmls, labels=None):
+    """Create a NamelistDiff object between given namelists. Accepts any
+    number of namelists as input.
+
+    >>> nml1 = f90nml.reads(nml_str1)
+    >>> nml2 = f90nml.reads(nml_str2)
+    >>> nml3 = f90nml.reads(nml_str3)
+    >>> nml_diff = f90nml.diff(nml1, nml2, nml3)
+
+    By default it will give to each namelist the name "Namelist#N"
+    where #N is the position where the namelist has been passed. The
+    labels can be defined using the labels argument.
+
+    >>> nml_diff = f90nml.diff(
+    ...     nml1, nml2, nml3, labels=["conf_or", "conf_1990", "conf_1850"])
+    """
+    n = len(nmls)
+    if labels is None:
+        labels = ["Namelist"+str(i+1) for i in range(len(nmls))]
+    else:
+        assert n == len(labels),\
+            "Number of labels doesn't match the number of arguments"
+        assert n == len(set(labels)), "There are repeated labels"
+
+    diff = NamelistDiff(nmls[0], labels[0])
+    [diff.diff(nmls[i], labels[i], inplace=True) for i in range(1, n)]
+    return diff
